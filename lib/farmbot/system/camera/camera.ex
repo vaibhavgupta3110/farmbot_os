@@ -1,9 +1,15 @@
 defmodule Farmbot.System.Camera do
+  @moduledoc "Interface with Cameras connected to Farmbot."
   use GenStage
 
-  def detect_and_subscribe(pid) do
-    spawn_link Farmbot.System.Camera.OpenCVHandler, :open_camera, [pid]
-    Farmbot.System.Camera.CameraSub.start_link
+  @doc "Capture a frame from a camera"
+  def frame(id \\ 0) do
+    GenStage.call(__MODULE__, {:frame, id})
+  end
+
+  def detect_and_subscribe(id, pid) do
+    spawn_link Farmbot.System.Camera.OpenCVHandler, :open_camera, [id, pid]
+    # Farmbot.System.Camera.CameraSub.start_link
   end
 
   def start_link do
@@ -11,15 +17,19 @@ defmodule Farmbot.System.Camera do
   end
 
   def init([]) do
-    spawn_link __MODULE__, :detect_and_subscribe, [self()]
-    {:producer, [], [dispatcher: GenStage.BroadcastDispatcher]}
+    spawn_link __MODULE__, :detect_and_subscribe, [0, self()]
+    {:producer, %{}, [dispatcher: GenStage.BroadcastDispatcher]}
   end
 
   def handle_demand(_, state) do
     {:noreply, [], state}
   end
 
-  def handle_info({:image, camera, image}, state) do
-    {:noreply, [{:image, camera, image}], state}
+  def handle_info({:image, camera, image}, state) when is_number(camera) and is_binary(image) do
+    {:noreply, [{:image, camera, image}], Map.put(state, camera, image)}
+  end
+
+  def handle_call({:frame, id}, _, state) do
+    {:reply, state[id], [], state}
   end
 end
