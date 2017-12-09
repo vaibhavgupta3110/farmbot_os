@@ -31,6 +31,7 @@ erl_crash.dump
 *.js
 /Makefile
 *.o
+fb_jpg_stream
 *.gch
 /release-*
 node_modules

@@ -38,6 +38,9 @@ defmodule Farmbot.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env(), @target),
       aliases: aliases(Mix.env(), @target),
       deps: deps() ++ deps(@target),
+      compilers: [:elixir_make] ++ Mix.compilers,
+      make_cwd: "c_src",
+      make_clean: ["clean"],
       dialyzer: [
         plt_add_deps: :transitive,
         flags: []
@@ -103,7 +106,8 @@ defmodule Farmbot.Mixfile do
       {:ex_syslogger, "~> 1.4", only: :prod},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       {:recon, "~> 2.3"},
-      {:nerves_leds, "~> 0.8.0"}
+      {:nerves_leds, "~> 0.8.0"},
+      {:elixir_make, "~> 0.4", runtime: false}
     ]
   end
 

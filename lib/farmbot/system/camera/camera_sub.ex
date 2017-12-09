@@ -6,17 +6,20 @@ defmodule Farmbot.System.Camera.CameraSub do
   end
 
   def init([]) do
-    {:consumer, [true], subscribe_to: [Farmbot.System.Camera]}
+    {:consumer, [], subscribe_to: [Farmbot.System.Camera]}
   end
 
   def handle_demand(_, state) do
     {:noreply, [], state}
   end
 
-  def handle_events(images, _, _) do
-    require IEx; IEx.pry
-
-    {:noreply, [], [false]}
+  def handle_events(images, _, state) do
+    for {:image, _, image} <- images do
+      # require IEx; IEx.pry
+      jpg = Base.decode64!(image)
+      File.write("blah.jpg", jpg)
+    end
+    {:noreply, [], state}
   end
 
 end

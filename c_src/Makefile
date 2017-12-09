@@ -31,6 +31,8 @@ LIBS = $(OPENCV)
 
 $(PROG):$(SRCS)
 	$(CC) $(CFLAGS) $(ERL_CFLAGS) -o $(PROG) $(SRCS) $(LIBS)
+	cp $(PROG) ../priv/$(PROG)
 
 clean:
 	rm -rf $(PROG)
+	rm -rf priv/$(PROG)

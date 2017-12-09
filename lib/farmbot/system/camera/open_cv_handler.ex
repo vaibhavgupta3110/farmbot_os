@@ -1,16 +1,20 @@
 defmodule Farmbot.System.Camera.OpenCVHandler do
   def open_camera(pid) do
-    port = Port.open({:spawn, "c_src/fb_jpg_stream/fb_jpg_stream"}, [:binary])
+    streamer = Path.join(:code.priv_dir(:farmbot), "fb_jpg_stream")
+    port = Port.open({:spawn_executable, streamer}, [:binary, {:args, [streamer]}])
     handle_port(port, %{buffer: <<>>, pid: pid})
   end
 
   def handle_port(port, state) do
     receive do
-      {_port, {:data, <<"\n">>}} ->
-        send state.pid, {:image, "0", state.buffer}
-        handle_port port, %{state | buffer: <<>>}
       {_port, {:data, data}} ->
-        handle_port port, %{state | buffer: state.buffer <> data}
+        {buffer, images} = String.split(state.buffer <> data, "\n") |> List.pop_at(-1)
+        for image <- images do
+          unless match?(<<>>, image) do
+            send state.pid, {:image, "0", image}
+          end
+        end
+        handle_port port, %{state | buffer: buffer}
       stuff ->
         exit(stuff)
     end
