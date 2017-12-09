@@ -29,7 +29,9 @@ erl_crash.dump
 # From other branches
 /cache
 *.js
-Makefile
+/Makefile
+*.o
+*.gch
 /release-*
 node_modules
 
