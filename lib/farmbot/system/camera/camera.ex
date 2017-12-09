@@ -7,17 +7,12 @@ defmodule Farmbot.System.Camera do
     GenStage.call(__MODULE__, {:frame, id})
   end
 
-  def detect_and_subscribe(id, pid) do
-    spawn_link Farmbot.System.Camera.OpenCVHandler, :open_camera, [id, pid]
-    # Farmbot.System.Camera.CameraSub.start_link
-  end
-
   def start_link do
     GenStage.start_link(__MODULE__, [], [name: __MODULE__])
   end
 
   def init([]) do
-    spawn_link __MODULE__, :detect_and_subscribe, [0, self()]
+    spawn_monitor Farmbot.System.Camera.OpenCVHandler, :open_camera, [3, self()]
     {:producer, %{}, [dispatcher: GenStage.BroadcastDispatcher]}
   end
 

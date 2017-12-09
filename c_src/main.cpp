@@ -11,12 +11,20 @@ using namespace std;
 
 int main(int, char *argv[])
 {
-  char *p;
-  ing conv = strtol(argv[1], &p, 10);
   prctl(PR_SET_PDEATHSIG, SIGHUP);
-  VideoCapture cap(0);
-  if(!cap.isOpened())
-      return -1;
+
+  char *p;
+  int cameraID = strtol(argv[1], &p, 10);
+
+  if (errno != 0 || *p != '\0' || cameraID > INT_MAX) {
+    return -2;
+  }
+
+  VideoCapture cap(cameraID);
+
+  if(!cap.isOpened()) {
+    return -1;
+  }
 
   while(true)
   {
