@@ -24,29 +24,33 @@ defmodule Farmbot.BotState.Transport.AMQP do
   end
 
   def init([]) do
-    token = ConfigStorage.get_config_value(:string, "authorization", "token")
-    with {:ok, %{bot: device, mqtt: mqtt_server, vhost: vhost}} <- Farmbot.Jwt.decode(token),
-         {:ok, conn} <- AMQP.Connection.open([host: mqtt_server, username: device, password: token, virtual_host: vhost || "/"]),
-         {:ok, chan} <- AMQP.Channel.open(conn),
-         queue_name  <- Enum.join([device, UUID.uuid1()], "-"),
-         :ok         <- Basic.qos(chan, []),
-         {:ok, _}    <- AMQP.Queue.declare(chan, queue_name, [auto_delete: true]),
-         :ok         <- AMQP.Queue.bind(chan, queue_name, @exchange, [routing_key: "bot.#{device}.from_clients"]),
-         :ok         <- AMQP.Queue.bind(chan, queue_name, @exchange, [routing_key: "bot.#{device}.sync.#"]),
-         {:ok, _tag} <- Basic.consume(chan, queue_name),
-         state       <- struct(State, [conn: conn, chan: chan, queue_name: queue_name, bot: device])
-    do
-      # Logger.success(3, "Connected to real time services.")
-      {:consumer, state, subscribe_to: [Farmbot.BotState, Farmbot.Logger, Farmbot.System.Camera]}
-    else
-      {:error, {:auth_failure, msg}} = fail ->
-        Farmbot.System.factory_reset(msg)
-        {:stop, fail, :no_state}
-      {:error, reason} ->
-        Logger.error 1, "Got error authenticating with Real time services: #{inspect reason}"
-        :ignore
-    end
+    {:ok, [], []}
   end
+
+  # def init([]) do
+  #   token = ConfigStorage.get_config_value(:string, "authorization", "token")
+  #   with {:ok, %{bot: device, mqtt: mqtt_server, vhost: vhost}} <- Farmbot.Jwt.decode(token),
+  #        {:ok, conn} <- AMQP.Connection.open([host: mqtt_server, username: device, password: token, virtual_host: vhost || "/"]),
+  #        {:ok, chan} <- AMQP.Channel.open(conn),
+  #        queue_name  <- Enum.join([device, UUID.uuid1()], "-"),
+  #        :ok         <- Basic.qos(chan, []),
+  #        {:ok, _}    <- AMQP.Queue.declare(chan, queue_name, [auto_delete: true]),
+  #        :ok         <- AMQP.Queue.bind(chan, queue_name, @exchange, [routing_key: "bot.#{device}.from_clients"]),
+  #        :ok         <- AMQP.Queue.bind(chan, queue_name, @exchange, [routing_key: "bot.#{device}.sync.#"]),
+  #        {:ok, _tag} <- Basic.consume(chan, queue_name),
+  #        state       <- struct(State, [conn: conn, chan: chan, queue_name: queue_name, bot: device])
+  #   do
+  #     # Logger.success(3, "Connected to real time services.")
+  #     {:consumer, state, subscribe_to: [Farmbot.BotState, Farmbot.Logger, Farmbot.System.Camera]}
+  #   else
+  #     {:error, {:auth_failure, msg}} = fail ->
+  #       Farmbot.System.factory_reset(msg)
+  #       {:stop, fail, :no_state}
+  #     {:error, reason} ->
+  #       Logger.error 1, "Got error authenticating with Real time services: #{inspect reason}"
+  #       :ignore
+  #   end
+  # end
 
   def handle_events(events, {pid, _}, state) do
     case Process.info(pid)[:registered_name] do
