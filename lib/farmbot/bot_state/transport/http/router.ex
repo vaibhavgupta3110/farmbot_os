@@ -33,7 +33,7 @@ defmodule Farmbot.BotState.Transport.HTTP.Router do
   end
 
   get "/api/v1/camera/0/latest" do
-    base64_image = Farmbot.System.Camera.frame()
+    {:ok, base64_image} = Farmbot.System.Camera.frame()
     image = Base.decode64!(base64_image)
     send_resp(conn, 200, image)
   end
@@ -48,7 +48,7 @@ defmodule Farmbot.BotState.Transport.HTTP.Router do
   end
 
   defp send_picture(conn) do
-    image = Farmbot.System.Camera.frame() |> Base.decode64!()
+    image = Farmbot.System.Camera.frame() |> elem(1) |> Base.decode64!()
     size = byte_size(image)
     header = "------#{@stream_boundry}\r\nContent-Type: \"image/jpeg\"\r\nContent-length: #{size}\r\n\r\n"
     footer = "\r\n"

@@ -37,7 +37,7 @@ defmodule Farmbot.BotState.Transport.AMQP do
          state       <- struct(State, [conn: conn, chan: chan, queue_name: queue_name, bot: device])
     do
       # Logger.success(3, "Connected to real time services.")
-      {:consumer, state, subscribe_to: [Farmbot.BotState, Farmbot.Logger]}
+      {:consumer, state, subscribe_to: [Farmbot.BotState, Farmbot.Logger, Farmbot.System.Camera]}
     else
       {:error, {:auth_failure, msg}} = fail ->
         Farmbot.System.factory_reset(msg)
@@ -52,6 +52,7 @@ defmodule Farmbot.BotState.Transport.AMQP do
     case Process.info(pid)[:registered_name] do
       Farmbot.Logger -> handle_log_events(events, state)
       Farmbot.BotState -> handle_bot_state_events(events, state)
+      Farmbot.System.Camera -> handle_camera_events(events, state)
     end
   end
 
@@ -88,6 +89,16 @@ defmodule Farmbot.BotState.Transport.AMQP do
   end
 
   def handle_bot_state_events([], state) do
+    {:noreply, [], state}
+  end
+
+  def handle_camera_events([{:image, camera, image} | rest], state) do
+    json = Poison.encode!(%{frame: image}) |> Poison.encode!
+    :ok = AMQP.Basic.publish state.chan, @exchange, "bot.#{state.bot}.stream.#{camera}.stream", json
+    handle_camera_events(rest, state)
+  end
+
+  def handle_camera_events([], state) do
     {:noreply, [], state}
   end
 

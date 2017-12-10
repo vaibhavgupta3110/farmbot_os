@@ -1,9 +1,11 @@
 defmodule Farmbot.System.Camera.OpenCVHandler do
+  use Farmbot.Logger
 
   def open_camera(id, pid) do
     streamer = Path.join(:code.priv_dir(:farmbot), "fb_jpg_stream")
-    port = Port.open({:spawn_executable, streamer}, [:binary, {:args, [to_string(id)]}])
-    handle_port(port, %{buffer: <<>>, pid: pid, camera_id: id})
+    port = Port.open({:spawn_executable, streamer}, [:exit_status, :binary, {:args, [to_string(id)]}])
+    res = handle_port(port, %{buffer: <<>>, pid: pid, camera_id: id})
+    exit(res)
   end
 
   def handle_port(port, state) do
@@ -16,7 +18,9 @@ defmodule Farmbot.System.Camera.OpenCVHandler do
           end
         end
         handle_port port, %{state | buffer: buffer}
-      unexpected -> exit(unexpected)
+      unexpected ->
+        Logger.error 1, "Camera handler #{state.camera_id} Exiting: #{inspect unexpected}"
+        exit(unexpected)
     end
   end
 end
